@@ -1,0 +1,5 @@
+bucket         = "replace-with-your-tf-state-bucket"
+key            = "terraform-aws-production-baseline/dev/terraform.tfstate"
+region         = "eu-west-2"
+dynamodb_table = "replace-with-your-lock-table"
+encrypt        = true

@@ -1,9 +1,10 @@
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb-sg"
-  description = "ALB security group"
+  description = "Security group for internet-facing ALB"
   vpc_id      = var.vpc_id
 
   ingress {
+    description = "Allow inbound HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -11,6 +12,7 @@ resource "aws_security_group" "alb" {
   }
 
   egress {
+    description = "Allow all outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -20,17 +22,19 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "app" {
   name        = "${var.name}-app-sg"
-  description = "App security group"
+  description = "Security group for application nodes"
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port       = 8080
-    to_port         = 8080
+    description     = "Allow ALB traffic to app tier"
+    from_port       = var.app_port
+    to_port         = var.app_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
 
   egress {
+    description = "Allow all outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

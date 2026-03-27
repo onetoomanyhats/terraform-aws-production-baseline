@@ -3,12 +3,16 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = { Name = var.name }
+  tags = {
+    Name = var.name
+  }
 }
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
-  tags   = { Name = "${var.name}-igw" }
+  tags = {
+    Name = "${var.name}-igw"
+  }
 }
 
 resource "aws_subnet" "public" {
@@ -17,7 +21,11 @@ resource "aws_subnet" "public" {
   availability_zone       = each.key
   cidr_block              = each.value
   map_public_ip_on_launch = true
-  tags                    = { Name = "${var.name}-public-${each.key}" }
+
+  tags = {
+    Name = "${var.name}-public-${each.key}"
+    Tier = "public"
+  }
 }
 
 resource "aws_subnet" "private" {
@@ -25,5 +33,9 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.this.id
   availability_zone = each.key
   cidr_block        = each.value
-  tags              = { Name = "${var.name}-private-${each.key}" }
+
+  tags = {
+    Name = "${var.name}-private-${each.key}"
+    Tier = "private"
+  }
 }

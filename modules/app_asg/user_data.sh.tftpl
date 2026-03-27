@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euxo pipefail
+
+mkdir -p /opt/app
+cat > /opt/app/index.html <<EOF
+<html>
+  <body>
+    <h1>terraform-aws-production-baseline-v2</h1>
+    <p>healthy</p>
+  </body>
+</html>
+EOF
+
+nohup busybox httpd -f -p ${app_port} -h /opt/app &

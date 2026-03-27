@@ -1,37 +1,55 @@
-# Terraform AWS Production Baseline
+# Terraform AWS Production Baseline v2
 
-Production-oriented Terraform/OpenTofu baseline for deploying a secure, scalable AWS foundation. This repository demonstrates a practical Infrastructure as Code approach for standing up a VPC, public/private subnets, security groups, an Application Load Balancer, and an Auto Scaling Group-backed application tier.
+Production-oriented AWS baseline built with **Terraform/OpenTofu**, structured the way a small platform team might maintain shared infrastructure. This version is intentionally more portfolio-ready than a minimal demo: it includes clearer environment separation, tagging, validation, optional cost-aware settings, and a workflow foundation for reviewable infrastructure changes.
 
-## Why this repository exists
+## Highlights
 
-This project is intended to demonstrate:
-
-- Practical AWS Infrastructure as Code using **Terraform/OpenTofu**
-- Reusable module structure
-- Remote state support with S3 + DynamoDB locking
-- Secure-by-default networking patterns
-- Scalable application deployment baseline suitable for extension into ECS, EKS, or full CI/CD workflows
-
-## Architecture
-
-The baseline provisions:
-
-- VPC with public and private subnets across multiple AZs
-- Internet Gateway and route tables
-- Security groups for load balancer and application tier
+- Multi-module AWS baseline
+- Environment structure for `dev` and easy extension to `staging` / `prod`
+- VPC with public/private subnets across multiple AZs
 - Application Load Balancer
 - Launch Template + Auto Scaling Group
 - IAM instance profile
-- Remote state backend example
+- Remote state example
+- Tagging strategy
+- Variable validation
+- GitHub Actions CI for fmt / validate / lint / tfsec
+
+## Architecture
+
+```mermaid
+flowchart TD
+    Internet((Internet)) --> ALB[Application Load Balancer]
+    ALB --> ASG[Auto Scaling Group]
+    ASG --> EC2A[EC2 App Node A]
+    ASG --> EC2B[EC2 App Node B]
+
+    subgraph AWS VPC
+        subgraph Public Subnets
+            ALB
+        end
+        subgraph Private Subnets
+            ASG
+            EC2A
+            EC2B
+        end
+    end
+
+    S3[(S3 Remote State)] <---> TF[Terraform/OpenTofu]
+    DDB[(DynamoDB Lock Table)] <---> TF
+```
 
 ## Repository structure
 
 ```text
 .
+├── .github/workflows/terraform-ci.yml
 ├── backend.hcl.example
 ├── envs/
 │   └── dev/
+│       ├── locals.tf
 │       ├── main.tf
+│       ├── outputs.tf
 │       ├── terraform.tfvars.example
 │       └── variables.tf
 ├── modules/
@@ -42,60 +60,70 @@ The baseline provisions:
 └── versions.tf
 ```
 
-## Getting started
+## Why this repository matters
 
-### 1. Prerequisites
+This repository is designed to show:
+
+- Solid **Infrastructure as Code structure**
+- Awareness of **scalability, security, and maintainability**
+- Familiarity with **reviewable and automated infrastructure workflows**
+- Practical alignment with **DevOps / Platform / SRE roles**
+
+## Quick start
+
+### Prerequisites
 
 - Terraform or OpenTofu
 - AWS CLI configured
-- An AWS account with sufficient permissions
+- AWS account with appropriate permissions
 
-### 2. Configure backend
-
-Copy the backend example and update values:
+### Configure backend
 
 ```bash
 cp backend.hcl.example backend.hcl
 ```
 
-### 3. Initialise
-
-```bash
-terraform init -backend-config=backend.hcl
-```
-
-### 4. Review and apply
+### Initialise and plan
 
 ```bash
 cd envs/dev
+terraform init -backend-config=../../backend.hcl
 terraform plan -var-file=terraform.tfvars
+```
+
+### Apply
+
+```bash
 terraform apply -var-file=terraform.tfvars
 ```
 
 ## Design decisions
 
-- **Private application tier**: application instances are not directly internet-exposed
-- **ALB in public subnets**: standard entry point for HTTP traffic
-- **ASG + Launch Template**: supports scaling and immutable-ish update patterns
-- **Module separation**: enables reuse, maintainability, and clearer ownership boundaries
+### 1. Public ALB, private application tier
+The load balancer is internet-facing, while application nodes remain in private subnets to reduce direct exposure.
 
-## Cost awareness
+### 2. Environment-driven inputs
+The `envs/dev` layout makes it easier to split variables, tags, and scaling parameters by environment without duplicating module logic.
 
-This baseline is intentionally designed so it can be evolved toward cost-conscious operation:
+### 3. Tagging and validation
+The repository includes a basic tagging strategy and variable validation because these are common expectations in real teams.
 
-- Instance type controlled through variables
-- Desired capacity configurable per environment
-- Easily extended for Spot diversification
-- Suitable for rightsizing, lifecycle policies, and scheduled scaling
+### 4. Cost-aware defaults
+The baseline is designed to be extended with:
+- scheduled scaling
+- Spot support
+- rightsizing
+- lifecycle governance
 
-## Suggested extensions
+## Suggested v3 enhancements
 
-- Add ECS/Fargate support
-- Add GitHub Actions pipeline for plan/apply
-- Add tfsec or Checkov scanning
-- Add CloudWatch alarms and dashboards
-- Add Route53 + ACM for TLS
+- Route53 + ACM for HTTPS
+- NAT gateway strategy and egress controls
+- ECS or EKS variant
+- CloudWatch alarms and dashboards
+- OIDC-based GitHub Actions deployment
+- Blue/green or rolling deployment strategy
 
-## Disclaimer
+## Notes
 
-This is a learning and portfolio repository. Review security, networking, IAM, and cost settings before production use.
+This is a portfolio repository, not a turnkey production platform. It demonstrates structure, tradeoffs, and operational thinking.

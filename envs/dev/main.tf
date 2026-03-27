@@ -1,5 +1,9 @@
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = local.common_tags
+  }
 }
 
 module "network" {
@@ -15,6 +19,7 @@ module "security" {
   source = "../../modules/security"
   name   = var.name
   vpc_id = module.network.vpc_id
+  app_port = var.app_port
 }
 
 module "alb" {
@@ -23,6 +28,7 @@ module "alb" {
   vpc_id            = module.network.vpc_id
   public_subnet_ids = module.network.public_subnet_ids
   alb_sg_id         = module.security.alb_sg_id
+  app_port          = var.app_port
 }
 
 module "app_asg" {
@@ -36,4 +42,5 @@ module "app_asg" {
   min_size            = var.min_size
   max_size            = var.max_size
   ami_id              = var.ami_id
+  app_port            = var.app_port
 }
